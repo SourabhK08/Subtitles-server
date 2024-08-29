@@ -2,11 +2,14 @@ import express from "express";
 import { GoogleGenerativeAI } from "@google/generative-ai"; // Ensure this is the correct import path and library
 import dotenv from "dotenv";
 import { YoutubeTranscript } from "youtube-transcript";
+import cors from "cors";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+
+app.use(cors());
 
 const geminiApiKey = process.env.API_KEY;
 if (!geminiApiKey) {
@@ -50,7 +53,7 @@ app.post("/generate-transcript", async (req, res) => {
   transcript.map((item) => {
     str += item.text;
   });
-  const prompt = ` This is youtube transcript =  ${str}  Generate questions based on it it can be of open ended or mcq type questions `;
+  const prompt = ` This is youtube transcript =  ${str}  Generate questions based on it it can be of open ended or mcq type questions and please beautify the text content so that it will be clearly and easily visible  `;
 
   const result = await model.generateContent([prompt]);
   console.log(result.response.text());
