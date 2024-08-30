@@ -53,7 +53,7 @@ app.post("/generate-transcript", async (req, res) => {
   transcript.map((item) => {
     str += item.text;
   });
-  const prompt = ` This is youtube transcript =  ${str}  Generate questions based on it it can be of open ended or mcq type questions and please beautify the text content so that it will be clearly and easily visible  `;
+  const prompt = ` This is youtube transcript =  ${str}  Generate questions based on it , it can be of open ended and mcq type questions and please do not tell the type of question while giving questions and please do not give the introduction just give questions give atleast 20 questions of mcq and open ended `;
 
   const result = await model.generateContent([prompt]);
   console.log(result.response.text());
