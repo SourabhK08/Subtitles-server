@@ -1,11 +1,12 @@
 import express from "express";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import mongoose from "mongoose";
 import dotenv from "dotenv";
-import { YoutubeTranscript } from "youtube-transcript";
 import cors from "cors";
-import Collection from "./mongodb.js"; // This should now work correctly with ES modules
+import Collection from "./mongodb.js"; // Assuming you have this Mongoose model
 import hbs from "hbs";
 import path from "path";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { YoutubeTranscript } from "youtube-transcript";
 
 dotenv.config();
 
@@ -16,6 +17,41 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.set("view engine", "hbs");
+
+app.post("/sign-up", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Create a new user document
+    const newUser = new Collection({ email, password });
+
+    // Save user to database
+    await newUser.save();
+    res.status(201).send("User registered successfully");
+  } catch (error) {
+    console.error("Error during sign-up:", error);
+    res.status(500).send("Error during sign-up. Please try again.");
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // Find user in the database
+    const user = await Collection.findOne({ email });
+
+    // Check if user exists and passwords match
+    if (user && user.password === password) {
+      res.status(200).send("Login successful");
+    } else {
+      res.status(400).send("Wrong email or password.");
+    }
+  } catch (error) {
+    console.error("Error during login:", error);
+    res.status(500).send("Error during login. Please try again.");
+  }
+});
 
 const geminiApiKey = process.env.API_KEY;
 if (!geminiApiKey) {
@@ -49,49 +85,13 @@ app.post("/generate-transcript", async (req, res) => {
       str += item.text;
     });
 
-    const prompt = `This is youtube transcript = ${str} Generate questions based on it, it can be of open-ended and MCQ type questions, and please do not tell the type of question while giving questions. Please do not give the introduction, just give questions. Give at least 20 questions of MCQ and open-ended.`;
+    const prompt = `This is youtube transcript = ${str} Generate questions based on it, they can be of open-ended and MCQ type questions, and please do not tell the type of question while giving questions. Please do not give the introduction, just give questions. Give at least 15 questions of type MCQ and open-ended.`;
 
     const result = await model.generateContent([prompt]);
     res.status(200).json(result.response.text());
   } catch (error) {
     console.error("Error in generating transcript questions:", error);
     res.status(500).json({ error: "Something went wrong." });
-  }
-});
-
-app.get("/login", (req, res) => {
-  res.render("login");
-});
-
-app.get("/Sign-up", (req, res) => {
-  res.render("sign-up");
-});
-
-app.post("/Sign-up", async (req, res) => {
-  try {
-    const data = {
-      name: req.body.name,
-      password: req.body.password,
-    };
-    await Collection.insertMany([data]);
-    res.redirect("/login");
-  } catch (error) {
-    console.error("Error during sign-up:", error);
-    res.status(500).send("Error during sign-up. Please try again.");
-  }
-});
-
-app.post("/login", async (req, res) => {
-  try {
-    const check = await Collection.findOne({ name: req.body.name });
-    if (check && check.password === req.body.password) {
-      res.redirect("/");
-    } else {
-      res.send("Wrong username or password.");
-    }
-  } catch (error) {
-    console.error("Error during login:", error);
-    res.status(500).send("Error during login. Please try again.");
   }
 });
 

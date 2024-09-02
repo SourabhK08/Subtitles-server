@@ -12,10 +12,11 @@ mongoose
     console.error("Failed to connect with DB", e);
   });
 
-const LogInSchema = new mongoose.Schema({
-  name: {
+const userSchema = new mongoose.Schema({
+  email: {
     type: String,
     required: true,
+    unique: true,
   },
   password: {
     type: String,
@@ -23,6 +24,6 @@ const LogInSchema = new mongoose.Schema({
   },
 });
 
-const Collection = mongoose.model("UserLogInSignupCollection", LogInSchema);
+const Collection = mongoose.model("User", userSchema);
 
 export default Collection;
