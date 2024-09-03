@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
 import Collection from "./mongodb.js"; // Assuming you have this Mongoose model
+import bcrypt from "bcrypt"; // Import bcrypt for hashing passwords
 import hbs from "hbs";
 import path from "path";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -18,12 +19,16 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.set("view engine", "hbs");
 
+// Route for user registration
 app.post("/sign-up", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Hash the password before saving
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     // Create a new user document
-    const newUser = new Collection({ email, password });
+    const newUser = new Collection({ email, password: hashedPassword });
 
     // Save user to database
     await newUser.save();
@@ -34,6 +39,7 @@ app.post("/sign-up", async (req, res) => {
   }
 });
 
+// Route for user login
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -42,7 +48,7 @@ app.post("/login", async (req, res) => {
     const user = await Collection.findOne({ email });
 
     // Check if user exists and passwords match
-    if (user && user.password === password) {
+    if (user && (await bcrypt.compare(password, user.password))) {
       res.status(200).send("Login successful");
     } else {
       res.status(400).send("Wrong email or password.");
@@ -53,6 +59,38 @@ app.post("/login", async (req, res) => {
   }
 });
 
+// Route to update password
+app.post("/update-password", async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res
+        .status(400)
+        .json({ message: "Email and new password are required." });
+    }
+
+    // Hash the new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update password in the database
+    const result = await Collection.updateOne(
+      { email },
+      { password: hashedPassword }
+    );
+
+    if (result.modifiedCount === 0) {
+      return res.status(404).json({ message: "User not found." });
+    }
+
+    res.status(200).json({ message: "Password updated successfully!" });
+  } catch (error) {
+    console.error("Error updating password:", error);
+    res.status(500).json({ message: "Error updating password." });
+  }
+});
+
+// Initialize GoogleGenerativeAI model
 const geminiApiKey = process.env.API_KEY;
 if (!geminiApiKey) {
   console.error(
@@ -64,6 +102,7 @@ if (!geminiApiKey) {
 const genAI = new GoogleGenerativeAI(process.env.API_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
+// Route for generating questions
 app.post("/generate-questions", async (req, res) => {
   try {
     const prompt = "Tell me interview questions";
@@ -75,6 +114,7 @@ app.post("/generate-questions", async (req, res) => {
   }
 });
 
+// Route for generating transcript questions
 app.post("/generate-transcript", async (req, res) => {
   try {
     const { youtube_url } = req.body;
@@ -85,7 +125,7 @@ app.post("/generate-transcript", async (req, res) => {
       str += item.text;
     });
 
-    const prompt = `This is youtube transcript = ${str} Generate questions based on it, they can be of open-ended and MCQ type questions, and please do not tell the type of question while giving questions. Please do not give the introduction, just give questions. Give at least 15 questions of type MCQ and open-ended.`;
+    const prompt = `This is youtube transcript = ${str} Generate questions based on it, they can be of open-ended and MCQ type question`;
 
     const result = await model.generateContent([prompt]);
     res.status(200).json(result.response.text());
