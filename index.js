@@ -118,17 +118,28 @@ app.post("/generate-questions", async (req, res) => {
 app.post("/generate-transcript", async (req, res) => {
   try {
     const { youtube_url } = req.body;
+
+    // Fetch transcript from YouTube
     const transcript = await YoutubeTranscript.fetchTranscript(youtube_url);
 
-    let str = "";
+    let transcriptText = "";
     transcript.forEach((item) => {
-      str += item.text;
+      transcriptText += item.text + " ";
     });
 
-    const prompt = `This is youtube transcript = ${str} Generate questions based on it, they can be of open-ended and MCQ type question`;
+    // Define a more focused prompt for question generation
+    const prompt = `This is the transcript from a YouTube video: "${transcriptText}". Based on this, generate a mix of open-ended and multiple-choice questions (MCQs). Provide only the questions and their answer options, and exclude any instructions.`;
 
     const result = await model.generateContent([prompt]);
-    res.status(200).json(result.response.text());
+
+    // Extract generated content
+    let generatedContent = result.response.text();
+
+    // Filter out unnecessary sections (like "## Open-Ended Questions:")
+    // You can customize this based on how the AI returns extra labels
+    generatedContent = generatedContent.replace(/##.*\n/g, "").trim();
+
+    res.status(200).json({ questions: generatedContent });
   } catch (error) {
     console.error("Error in generating transcript questions:", error);
     res.status(500).json({ error: "Something went wrong." });
