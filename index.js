@@ -8,7 +8,7 @@ import hbs from "hbs";
 import path from "path";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { YoutubeTranscript } from "youtube-transcript";
-
+import axios from "axios";
 dotenv.config();
 
 const app = express();
@@ -143,6 +143,34 @@ app.post("/generate-transcript", async (req, res) => {
   } catch (error) {
     console.error("Error in generating transcript questions:", error);
     res.status(500).json({ error: "Something went wrong." });
+  }
+});
+
+app.post("/login", async (req, res) => {
+  const { email, password, recaptchaToken } = req.body;
+  const secretKey = "YOUR_RECAPTCHA_SECRET_KEY"; // Replace with your secret key
+
+  try {
+    const recaptchaResponse = await axios.post(
+      `https://www.google.com/recaptcha/api/siteverify`,
+      {},
+      {
+        params: {
+          secret: secretKey,
+          response: recaptchaToken,
+        },
+      }
+    );
+
+    if (recaptchaResponse.data.success) {
+      // Proceed with authentication and other login logic
+      // ...
+      res.status(200).send("Login successful!");
+    } else {
+      res.status(400).send("reCAPTCHA verification failed");
+    }
+  } catch (error) {
+    res.status(500).send("Error verifying reCAPTCHA");
   }
 });
 
