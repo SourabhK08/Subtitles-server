@@ -128,31 +128,39 @@ app.post("/generate-transcript", async (req, res) => {
     });
 
     // Define a more focused prompt for question generation
-    const prompt = `This is the transcript from a YouTube video: "${transcriptText}". Based on this, generate a mix of open-ended and multiple-choice questions (MCQs). Provide only the questions and their answer options, and exclude any instructions.`;
+    const prompt = `This is the transcript from a YouTube video: "${transcriptText}". Based on this, generate 5 open-ended questions. Exclude any instructions.`;
 
     const result = await model.generateContent([prompt]);
 
     // Extract generated content
     let generatedContent = result.response.text();
 
-    // Filter out unnecessary sections (like "## Open-Ended Questions:")
-    // You can customize this based on how the AI returns extra labels
-    generatedContent = generatedContent.replace(/##.*\n/g, "").trim();
+    // Define a prompt for generating MCQs
+    const prompt2 = `This is the transcript from a YouTube video: "${transcriptText}". Based on this, generate 5 MCQs, one per line, followed by 4 options and the correct answer (a, b, c, or d). Exclude any instructions.`;
 
-    res.status(200).json({ questions: generatedContent });
+    const result2 = await model.generateContent([prompt2]);
+
+    // Extract MCQ content
+    let generatedContent2 = result2.response.text();
+
+    res.status(200).json({
+      questions: generatedContent,
+      mcq: generatedContent2,
+    });
   } catch (error) {
     console.error("Error in generating transcript questions:", error);
     res.status(500).json({ error: "Something went wrong." });
   }
 });
 
+// reCAPTCHA-protected login route
 app.post("/login", async (req, res) => {
   const { email, password, recaptchaToken } = req.body;
   const secretKey = "YOUR_RECAPTCHA_SECRET_KEY"; // Replace with your secret key
 
   try {
     const recaptchaResponse = await axios.post(
-      `https://www.google.com/recaptcha/api/siteverify`,
+      "https://www.google.com/recaptcha/api/siteverify",
       {},
       {
         params: {
@@ -164,7 +172,6 @@ app.post("/login", async (req, res) => {
 
     if (recaptchaResponse.data.success) {
       // Proceed with authentication and other login logic
-      // ...
       res.status(200).send("Login successful!");
     } else {
       res.status(400).send("reCAPTCHA verification failed");
