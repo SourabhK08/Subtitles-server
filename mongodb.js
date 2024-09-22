@@ -1,10 +1,13 @@
 import mongoose from "mongoose";
 
 mongoose
-  .connect("mongodb://127.0.0.1:27017/UserDatabase", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
+  .connect(
+    "mongodb+srv://ukdiaries1208:1234567890@transcriptgenerator.hmkhe.mongodb.net/UserDatabase?retryWrites=true&w=majority",
+    {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    }
+  )
   .then(() => {
     console.log("Mongoose connected");
   })
