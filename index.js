@@ -2,7 +2,7 @@ import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import cors from "cors";
-import Collection from "./mongodb.js"; // Assuming you have this Mongoose model
+import Collection from "./mongodb.js";
 import bcrypt from "bcrypt"; // Import bcrypt for hashing passwords
 import hbs from "hbs";
 import path from "path";
@@ -128,19 +128,23 @@ app.post("/generate-transcript", async (req, res) => {
     });
 
     // Define a more focused prompt for question generation
-    const prompt = `This is the transcript from a YouTube video: "${transcriptText}". Based on this, generate 5 open-ended questions. Exclude any instructions.`;
+    const prompt = `This is the transcript from a YouTube video: "${transcriptText}". Based on this, generate a open-ended question and Exclude any instructions just 5 questions only.`;
 
     const result = await model.generateContent([prompt]);
 
     // Extract generated content
     let generatedContent = result.response.text();
 
+    generatedContent = generatedContent.replace(/##.*\n/g, "").trim();
+
     // Define a prompt for generating MCQs
-    const prompt2 = `This is the transcript from a YouTube video: "${transcriptText}". Based on this, generate 5 MCQs, one per line, followed by 4 options and the correct answer (a, b, c, or d). Exclude any instructions.`;
+    const prompt2 = `This is the transcript from a YouTube video: "${transcriptText}". Based on this, generate a mcq question in one line and in next line its 4 option ans in next line it's answer just write a,b,c or d and in next line again question,option answer keep repeating this formate for all 5 question so that i split them by '\n' in first line get question second line option and in 3rd line get answer answer must be on char a,b,c or d exclude any instructions just 5 question only.`;
 
     const result2 = await model.generateContent([prompt2]);
     // Extract MCQ content
     let generatedContent2 = result2.response.text();
+
+    generatedContent2 = generatedContent2.replace(/##.*\n/g, "").trim();
 
     res.status(200).json({
       questions: generatedContent,
@@ -155,6 +159,7 @@ app.post("/generate-transcript", async (req, res) => {
 // reCAPTCHA-protected login route
 app.post("/login", async (req, res) => {
   const { email, password, recaptchaToken } = req.body;
+  const secretKey = "6Lc3gDUqAAAAAHViaiw4vGwPTUEaw37SmcAzUVD7";
 
   try {
     const recaptchaResponse = await axios.post(
