@@ -156,7 +156,7 @@ app.post("/generate-transcript", async (req, res) => {
 // reCAPTCHA-protected login route
 app.post("/login", async (req, res) => {
   const { email, password, recaptchaToken } = req.body;
-  const secretKey = "6Lc3gDUqAAAAAHViaiw4vGwPTUEaw37SmcAzUVD7"; // Replace with your secret key
+  const secretKey = "YOUR_RECAPTCHA_SECRET_KEY"; // Replace with your secret key
 
   try {
     const recaptchaResponse = await axios.post(
