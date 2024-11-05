@@ -139,7 +139,6 @@ app.post("/generate-transcript", async (req, res) => {
     const prompt2 = `This is the transcript from a YouTube video: "${transcriptText}". Based on this, generate 5 MCQs, one per line, followed by 4 options and the correct answer (a, b, c, or d). Exclude any instructions.`;
 
     const result2 = await model.generateContent([prompt2]);
-
     // Extract MCQ content
     let generatedContent2 = result2.response.text();
 
@@ -156,7 +155,6 @@ app.post("/generate-transcript", async (req, res) => {
 // reCAPTCHA-protected login route
 app.post("/login", async (req, res) => {
   const { email, password, recaptchaToken } = req.body;
-  const secretKey = "YOUR_RECAPTCHA_SECRET_KEY"; // Replace with your secret key
 
   try {
     const recaptchaResponse = await axios.post(
